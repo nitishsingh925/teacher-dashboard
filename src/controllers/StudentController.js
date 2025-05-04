@@ -1,5 +1,7 @@
 
 import { Student } from "../models/student.models.js";
+import { ReportType } from "../models/reportType.models.js";
+import { ReportName } from "../models/reportName.models.js";
 import moment from 'moment';
 
 // Student List
@@ -233,6 +235,116 @@ export const studentDelete = async (req, res) => {
             return res.status(404).json({message: "Student not found"});
         }
         return res.status(200).json({message:"Student record is successfully deleted!"});
+    }
+    catch(err){
+        return res.status(500).json({message: err.message});
+    }
+}
+
+// Academic Report
+export const AcademicReport = async (req, res) => {
+  try {
+    const user = req.user.payload;  
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const { grade, section } = req.query;
+
+    const filter = { school_id: user.school_id }; 
+  if (grade) filter.grade = grade;
+  if (section) filter.section = section;
+
+    const total = await Student.countDocuments(filter);
+
+    const students = await Student.find(
+      filter,
+      'roll_number first_name last_name grade section house profile_image'
+    )
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ message: "No record found." });
+    }
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+    const studentsWithImage = students.map(student => {
+    const hasImage = student.profile_image && student.profile_image.trim() !== '';
+
+      return {
+        ...student,
+        profile_image: hasImage
+          ? `${baseUrl}/students/${student.profile_image}`
+          : null
+      };
+    });
+
+    return res.status(200).json({
+      message: "Student records successfully fetched.",
+      page,
+      limit,
+      total,
+      data: studentsWithImage
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+}
+
+// Academic Report View
+export const AcademicReportView = async (req, res) => {
+  try{
+      const id = req.params.id;
+      const user = req.user.payload;
+      const student = await Student.findOne({ _id: id, school_id: user.school_id })
+      .select('first_name last_name roll_number') 
+      .lean();
+  
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const { report_type, report_name } = req.query;
+
+      const reportname = await ReportName.findOne({ _id: report_name, report_type_id: report_type });
+      if(!reportname)
+      {
+          return res.status(404).json({message: "Report Name not found"});
+      }
+
+      return res.status(200).json({message:"Report Name record is successfully fetched", data:reportname, student:student});
+  }
+  catch(err){
+      return res.status(500).json({message: err.message});
+  }
+}
+
+// Report Type
+export const reportTypes = async (req, res) => {
+    try{
+        const reportTypes = await ReportType.find();
+        if(!reportTypes){
+            return res.status(404).json({message: "Report Type not found"});
+        }
+        return res.status(200).json({message:"Report Type record is successfully fetched", data:reportTypes});
+    }
+    catch(err){
+        return res.status(500).json({message: err.message});
+    }
+}
+
+// Report Names
+export const reportNames = async (req, res) => {
+    try{
+        const reportNames = await ReportName.find();
+        if(!reportNames){
+            return res.status(404).json({message: "Report Name not found"});
+        }
+        return res.status(200).json({message:"Report Name record is successfully fetched", data:reportNames});
     }
     catch(err){
         return res.status(500).json({message: err.message});

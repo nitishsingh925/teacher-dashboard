@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fs from "fs";
-import { Index, studentStore, studentUpdate, View, studentDelete } from "../controllers/StudentController.js";
+import { Index, studentStore, studentUpdate, View, studentDelete, AcademicReport, AcademicReportView, reportTypes, reportNames } from "../controllers/StudentController.js";
 import { studentUpdateValidation, studentValidation } from "../validation/studentValidation.js";
 
 // Multer setup for file uploads
@@ -47,6 +47,14 @@ Route.post("/students", upload.single('profile_image'), ValidationMiddleware(stu
 Route.put("/students/:id", upload.single('profile_image'), ValidationMiddleware(studentUpdateValidation), studentUpdate);   
 Route.get("/students/:id", View);            
 Route.delete("/students/:id", studentDelete);
+
+// Student Academic Report
+Route.get("/students-academic-report", AcademicReport); 
+Route.get("/students-academic-report/:id", AcademicReportView);
+
+// Master Data
+Route.get("/report-types", reportTypes);
+Route.get("/report-names", reportNames);
 
 
 export default Route;
