@@ -90,8 +90,18 @@ export const studentValidation = [
 export const studentUpdateValidation = [
   check("roll_number")
     .trim()
-    .notEmpty()
-    .withMessage("Role number is required"), 
+    .notEmpty().withMessage("Roll number is required")
+    .custom(async (value, { req }) => {
+      const studentId = req.params.id;
+
+      const existingStudent = await Student.findOne({ roll_number: value });
+
+      if (existingStudent && existingStudent._id.toString() !== studentId) {
+        throw new Error("Roll number already exists");
+      }
+
+      return true;
+    }), 
     
     check("first_name")
     .trim()
@@ -107,28 +117,26 @@ export const studentUpdateValidation = [
     .isIn(["male", "female", "other"])
     .withMessage("Gender must be either 'male', 'female', or 'other'"),
 
-   check("dob")
+    check("dob")
     .notEmpty()
-    .withMessage("Date of birth is required")
-    .isISO8601()
-    .withMessage("Date of birth must be a valid date")
-    .custom((value) => {
-        const selectedDate = new Date(value);
-        const today = new Date();
-        if (selectedDate >= today) {
-        throw new Error("Date of birth must be in the past");
-        }
-        return true;
-    }),
+    .withMessage("Date of birth is required"),
 
-  check("email")
-    .trim()
-    .notEmpty()
-    .withMessage("Email is required")
-    .isEmail()
-    .withMessage("Invalid email address")
-    .isLength({ min: 4, max: 150 })
-    .withMessage("Email must be between 4 and 150 characters"),
+    check("email")
+      .trim()
+      .notEmpty().withMessage("Email is required")
+      .isEmail().withMessage("Invalid email address")
+      .isLength({ min: 4, max: 150 }).withMessage("Email must be between 4 and 150 characters")
+      .custom(async (value, { req }) => {
+        const studentId = req.params.id;
+
+        const existingStudent = await Student.findOne({ email: value });
+
+        if (existingStudent && existingStudent._id.toString() !== studentId) {
+          throw new Error("Email already exists");
+        }
+
+        return true;
+      }),
 
   check("phone_number")
     .trim()
