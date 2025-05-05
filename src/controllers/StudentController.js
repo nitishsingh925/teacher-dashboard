@@ -2,6 +2,7 @@
 import { Student } from "../models/student.models.js";
 import { ReportType } from "../models/reportType.models.js";
 import { ReportName } from "../models/reportName.models.js";
+import { StudentReport } from "../models/studentReport.models.js";
 import moment from 'moment';
 
 // Student List
@@ -241,7 +242,35 @@ export const studentDelete = async (req, res) => {
     }
 }
 
-// Academic Report
+// Report Type
+export const reportTypes = async (req, res) => {
+  try{
+      const reportTypes = await ReportType.find();
+      if(!reportTypes){
+          return res.status(404).json({message: "Report Type not found"});
+      }
+      return res.status(200).json({message:"Report Type record is successfully fetched", data:reportTypes});
+  }
+  catch(err){
+      return res.status(500).json({message: err.message});
+  }
+}
+
+// Report Names
+export const reportNames = async (req, res) => {
+  try{
+      const reportNames = await ReportName.find();
+      if(!reportNames){
+          return res.status(404).json({message: "Report Name not found"});
+      }
+      return res.status(200).json({message:"Report Name record is successfully fetched", data:reportNames});
+  }
+  catch(err){
+      return res.status(500).json({message: err.message});
+  }
+}
+
+// Academic Report List
 export const AcademicReport = async (req, res) => {
   try {
     const user = req.user.payload;  
@@ -295,8 +324,8 @@ export const AcademicReport = async (req, res) => {
   }
 }
 
-// Academic Report View
-export const AcademicReportView = async (req, res) => {
+// Academic Report Create
+export const AcademicReportCreate = async (req, res) => {
   try{
       const id = req.params.id;
       const user = req.user.payload;
@@ -323,30 +352,47 @@ export const AcademicReportView = async (req, res) => {
   }
 }
 
-// Report Type
-export const reportTypes = async (req, res) => {
-    try{
-        const reportTypes = await ReportType.find();
-        if(!reportTypes){
-            return res.status(404).json({message: "Report Type not found"});
-        }
-        return res.status(200).json({message:"Report Type record is successfully fetched", data:reportTypes});
-    }
-    catch(err){
-        return res.status(500).json({message: err.message});
-    }
-}
+export const AcademicReportStore = async (req, res) => {
+  try {
+    const { report_type_id, report_name_id, date, marks } = req.body;
+    const id = req.params.id; 
+    const user = req.user.payload; 
 
-// Report Names
-export const reportNames = async (req, res) => {
-    try{
-        const reportNames = await ReportName.find();
-        if(!reportNames){
-            return res.status(404).json({message: "Report Name not found"});
-        }
-        return res.status(200).json({message:"Report Name record is successfully fetched", data:reportNames});
+    // Find student in the same school
+    const student = await Student.findOne({ _id: id, school_id: user.school_id })
+      .select('first_name last_name roll_number')
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
     }
-    catch(err){
-        return res.status(500).json({message: err.message});
+
+    // Validate report name
+    const reportname = await ReportName.findOne({ _id: report_name_id, report_type_id: report_type_id });
+    if (!reportname) {
+      return res.status(404).json({ message: "Report Name not found" });
     }
-}
+
+    // Create and save report
+    const report = new StudentReport({
+      school_id: user.school_id,
+      student_id: id,
+      report_type_id,
+      report_name_id,
+      date,
+      marks,
+      create_by: user.id,
+      updated_by: user.id
+    });
+
+    await report.save();
+
+    return res.status(200).json({
+      message: "Student Report is successfully Stored",
+      data: report
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

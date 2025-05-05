@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fs from "fs";
-import { Index, studentStore, studentUpdate, View, studentDelete, AcademicReport, AcademicReportView, reportTypes, reportNames } from "../controllers/StudentController.js";
+import { Index, studentStore, studentUpdate, View, studentDelete, reportTypes, reportNames, AcademicReport, AcademicReportCreate, AcademicReportStore } from "../controllers/StudentController.js";
 import { studentUpdateValidation, studentValidation } from "../validation/studentValidation.js";
 
 // Multer setup for file uploads
@@ -50,7 +50,8 @@ Route.delete("/students/:id", studentDelete);
 
 // Student Academic Report
 Route.get("/students-academic-report", AcademicReport); 
-Route.get("/students-academic-report/:id", AcademicReportView);
+Route.get("/students-academic-report/:id", AcademicReportCreate);
+Route.post("/students-academic-report/:id", AcademicReportStore);
 
 // Master Data
 Route.get("/report-types", reportTypes);
