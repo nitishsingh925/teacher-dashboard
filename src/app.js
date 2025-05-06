@@ -3,6 +3,7 @@ import AuthRoute from "./routes/login.route.js";
 import StudentRoute from "./routes/student.route.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { ALLOWED_ORIGINS } from "./utils/constant.js";
 
 const app = express();
 app.use(express.urlencoded({ extended: true })); //accept request from x-www-form-urlencoded
@@ -10,7 +11,13 @@ app.use(express.json()); // for parsing application/json (for geting request dat
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
